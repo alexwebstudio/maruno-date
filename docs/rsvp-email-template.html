@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<!--
+  Шаблон письма «Новый ответ гостя» для Maruno Date.
+  Плейсхолдеры: {{name}} {{phone}} {{guests}} {{comment}} {{date}} {{siteName}}
+  Использование: на сервере подставьте значения через .replace('{{name}}', ...) и т.д.
+  Таблично-инлайновая вёрстка — корректно открывается в Gmail, Outlook, Apple Mail.
+-->
+<html lang="ru">
+<head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /></head>
+<body style="margin:0;padding:0;background:#F3EEE7;font-family:'Segoe UI',Arial,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F3EEE7;padding:32px 12px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 12px 40px rgba(120,90,50,.14);">
+
+          <!-- Шапка -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#C4A97D,#8B6F47);padding:34px 30px;text-align:center;">
+              <div style="font-size:30px;line-height:1;margin-bottom:10px;">💌</div>
+              <div style="color:#ffffff;font-size:20px;font-weight:600;letter-spacing:.5px;">Новая регистрация RSVP</div>
+              <div style="color:rgba(255,255,255,.82);font-size:13px;margin-top:6px;">{{siteName}}</div>
+            </td>
+          </tr>
+
+          <!-- Тело -->
+          <tr>
+            <td style="padding:28px 30px 8px;">
+              <p style="color:#6A5D4C;font-size:14px;line-height:1.6;margin:0 0 20px;">Гость ответил на ваше приглашение. Детали ниже:</p>
+
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="padding:12px 0;border-bottom:1px solid #F0E9DE;">
+                    <span style="display:inline-block;width:150px;color:#9A8B76;font-size:13px;">Имя</span>
+                    <span style="color:#2C2017;font-size:15px;font-weight:600;">{{name}}</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:12px 0;border-bottom:1px solid #F0E9DE;">
+                    <span style="display:inline-block;width:150px;color:#9A8B76;font-size:13px;">Телефон</span>
+                    <span style="color:#2C2017;font-size:15px;">{{phone}}</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:12px 0;border-bottom:1px solid #F0E9DE;">
+                    <span style="display:inline-block;width:150px;color:#9A8B76;font-size:13px;">Количество гостей</span>
+                    <span style="color:#2C2017;font-size:15px;font-weight:600;">{{guests}}</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:12px 0;border-bottom:1px solid #F0E9DE;">
+                    <span style="display:inline-block;width:150px;color:#9A8B76;font-size:13px;vertical-align:top;">Комментарий</span>
+                    <span style="color:#2C2017;font-size:15px;">{{comment}}</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:12px 0;">
+                    <span style="display:inline-block;width:150px;color:#9A8B76;font-size:13px;">Дата отправки</span>
+                    <span style="color:#2C2017;font-size:15px;">{{date}}</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Подвал -->
+          <tr>
+            <td style="padding:22px 30px 30px;text-align:center;">
+              <div style="height:1px;background:#F0E9DE;margin-bottom:18px;"></div>
+              <div style="color:#A79CB8;font-size:12px;">Отправлено через <b style="color:#B7381A;">Maruno Date</b></div>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

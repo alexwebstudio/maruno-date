@@ -1,0 +1,1890 @@
+/* ══════════════════════════════════════════════════════════════
+   MARUNO BIRTHDAY — дизайн-система 1.0
+   Слои файла:
+   1. @theme      — токены Tailwind v4 (цвет, шрифт, радиус)
+   2. База        — reset, типографика документа
+   3. Примитивы   — .mrn-* : контейнер, кнопки, поля, заголовки
+   4. Публичная   — навигация, превью шаблонов, появление секций
+   5. Legacy      — классы, которые используют редактор, кабинет
+                    и блоки пользовательских сайтов. Не удалять.
+   ══════════════════════════════════════════════════════════════ */
+
+@import "tailwindcss";
+
+/* ─────────────────────────────────────────────
+   0. ШРИФТЫ ИНТЕРФЕЙСА — self-hosted
+   Файлы лежат в public/fonts, по одному woff2 на языковое
+   подмножество. Все три — переменные (variable), поэтому один
+   файл закрывает весь диапазон весов и лишних запросов нет.
+   Google Fonts не используется намеренно: сборка не должна
+   зависеть от внешней сети.
+   ───────────────────────────────────────────── */
+
+/* Unbounded — дисплейный. Заголовки, логотип, крупные числа. */
+@font-face {
+  font-family: 'Unbounded';
+  font-style: normal;
+  font-weight: 200 900;
+  font-display: swap;
+  src: url('/fonts/unbounded-cyrillic-ext.woff2') format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+@font-face {
+  font-family: 'Unbounded';
+  font-style: normal;
+  font-weight: 200 900;
+  font-display: swap;
+  src: url('/fonts/unbounded-cyrillic.woff2') format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'Unbounded';
+  font-style: normal;
+  font-weight: 200 900;
+  font-display: swap;
+  src: url('/fonts/unbounded-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* Golos Text — интерфейсный. Навигация, текст, кнопки, формы. */
+@font-face {
+  font-family: 'Golos Text';
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+  src: url('/fonts/golos-text-cyrillic-ext.woff2') format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+@font-face {
+  font-family: 'Golos Text';
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+  src: url('/fonts/golos-text-cyrillic.woff2') format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'Golos Text';
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+  src: url('/fonts/golos-text-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* JetBrains Mono — цифры, даты, таймеры, надзаголовки. */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 100 800;
+  font-display: swap;
+  src: url('/fonts/jetbrains-mono-cyrillic-ext.woff2') format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 100 800;
+  font-display: swap;
+  src: url('/fonts/jetbrains-mono-cyrillic.woff2') format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 100 800;
+  font-display: swap;
+  src: url('/fonts/jetbrains-mono-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+
+/* ─────────────────────────────────────────────
+   1. ТОКЕНЫ
+   ───────────────────────────────────────────── */
+@theme {
+  /* Нейтральная графитовая шкала — текст и тёмные плоскости.
+     Намеренно без цветного подмеса: единственный цвет на странице —
+     мандарин, и он не должен конкурировать с окрашенным «чёрным». */
+  --color-ink:      #1A1016;
+  --color-ink-700:  #33232C;
+  --color-ink-600:  #5A4650;
+  --color-ink-400:  #8B7680;
+  --color-ink-300:  #BCA9B1;
+
+  /* Бумажная шкала — фоны */
+  --color-paper:    #FCF6F5;
+  --color-paper-2:  #F5EAEA;
+  --color-paper-3:  #EAD9DC;
+
+  /* Песочный оттенок бумаги — для чередования секций */
+  --color-sand:     #FBECEF;
+
+  /* ОДНА доминанта на весь продукт — мандарин. Кнопки, ссылки, фокус,
+     акцентные слова, активные состояния: всё держится на нём.
+     Тёмные плоскости нейтральные, чтобы доминанта не спорила с фоном. */
+  --color-night-900: #170D14;
+  --color-night-800: #251522;
+  --color-punch:      #F5306B;
+  --color-punch-soft: #FF6F98;
+
+  /* Единственный вспомогательный акцент — свеча. Работает только на тёмном:
+     на бумаге жёлтый теряет контраст и превращается в грязь.
+     Крем и мята — не акценты, а мягкие плоскости для чередования секций. */
+  --color-spark: #FF9EC0;
+  --color-spark-soft: #FFD6E5;
+  --color-cream:     #FBD9E4;
+  --color-cream-soft: #FDEBF1;
+  --color-mint:      #2E7D5F;
+
+  /* Типографика. Три роли, три гарнитуры — и ни одной больше.
+     display — Unbounded: широкий геометрический гротеск, держит крупный кегль;
+     ui      — Golos Text: спроектирован под кириллицу, читается в 13px;
+     numeric — JetBrains Mono: цифры, даты, таймеры, надзаголовки. */
+  --font-display: 'Unbounded', 'Arial Black', system-ui, sans-serif;
+  --font-ui:      'Golos Text', system-ui, -apple-system, sans-serif;
+  --font-numeric: 'JetBrains Mono', ui-monospace, 'SF Mono', monospace;
+
+  /* Псевдонимы для мест, где шрифт задаётся инлайном (Toaster в layout) */
+  --font-golos:   'Golos Text';
+
+  /* Акцентная антиква — редакционная подпись Date. Только выделенные слова. */
+  --font-serif:   'Playfair Display', 'Georgia', serif;
+
+  /* Радиусы — их ровно четыре */
+  /* ── ШКАЛА ОТСТУПОВ ──
+     Одна шкала на весь продукт. Любой вертикальный или горизонтальный
+     промежуток берётся отсюда, а не подбирается на глаз: именно
+     разнобой в 14/16/18/20px и создаёт ощущение слепленного макета. */
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* Промежутки между действиями (кнопками) и между карточками в сетке.
+     Растут вместе с экраном, но никогда не схлопываются в ноль. */
+  --gap-actions: clamp(12px, 1.4vw, 18px);
+  --gap-grid:    clamp(16px, 2vw, 24px);
+
+  /* Расстояние от заголовка секции до её содержимого */
+  --gap-heading: clamp(28px, 4vw, 44px);
+
+  /* ── ПЛОСКОСТИ ──
+     Две, и обе названы по роли, а не по цвету:
+     surface — фон страницы, raised — карточка поверх него. */
+  --color-surface: #FCF6F5;
+  --color-raised:  #FFFFFF;
+
+  --radius-xs:   4px;
+  --radius-sm:   10px;
+  --radius-lg:   18px;
+  --radius-full: 999px;
+}
+
+:root {
+  /* Сетка */
+  --mrn-container: 1200px;
+  --mrn-gutter: clamp(20px, 5vw, 40px);
+
+  /* Движение — одна кривая, три длительности */
+  --mrn-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --mrn-t-fast: 180ms;
+  --mrn-t: 240ms;
+  --mrn-t-slow: 400ms;
+
+  /* Линии и тени. Тень одна, мягкая, без «парения». */
+  --mrn-line: rgba(26, 16, 22, 0.10);
+  --mrn-line-strong: rgba(26, 16, 22, 0.17);
+  --mrn-line-invert: rgba(252, 246, 245, 0.16);
+  --mrn-shadow: 0 1px 2px rgba(26, 16, 22, 0.04), 0 14px 34px -18px rgba(120, 20, 60, 0.20);
+  --mrn-shadow-lift: 0 2px 4px rgba(26, 16, 22, 0.05), 0 28px 54px -24px rgba(120, 20, 60, 0.28);
+
+  /* Типографическая шкала.
+     Unbounded шире привычного гротеска, поэтому верхние значения ниже,
+     чем кажется правильным «на глаз»: иначе заголовок не помещается
+     в 360px по ширине. Проверено на 320 / 360 / 390 / 414. */
+  --mrn-display: clamp(2.25rem, 6.6vw, 4.4rem);
+  --mrn-h1: clamp(1.85rem, 4.6vw, 3rem);
+  --mrn-h2: clamp(1.5rem, 3.3vw, 2.3rem);
+  --mrn-h3: clamp(1.1rem, 2vw, 1.38rem);
+
+  /* Совместимость: старые переменные, на которые опираются блоки сайтов */
+  --gold: #FF9EC0;
+  --gold-dark: #C0143C;
+  --cream: #FCF6F5;
+  --dark: #170D14;
+}
+
+/* ─────────────────────────────────────────────
+   2. БАЗА
+   ───────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-ui);
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-size: 16px;
+  line-height: 1.6;
+  font-synthesis-weight: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+::selection { background: var(--color-punch); color: var(--color-paper); }
+
+::-webkit-scrollbar { width: 10px; }
+::-webkit-scrollbar-track { background: var(--color-paper-2); }
+::-webkit-scrollbar-thumb { background: var(--color-paper-3); border-radius: var(--radius-full); border: 3px solid var(--color-paper-2); }
+::-webkit-scrollbar-thumb:hover { background: var(--color-ink-300); }
+
+/* Единое кольцо фокуса. Раньше его не было нигде. */
+:focus-visible {
+  outline: 2px solid var(--color-punch);
+  outline-offset: 2px;
+  border-radius: var(--radius-xs);
+}
+.mrn-dark :focus-visible { outline-color: var(--color-spark); }
+
+img, svg, video { max-width: 100%; }
+
+/* ─────────────────────────────────────────────
+   3. ПРИМИТИВЫ
+   ───────────────────────────────────────────── */
+
+/* Контейнер — один на всю публичную часть */
+.mrn-container {
+  width: 100%;
+  max-width: var(--mrn-container);
+  margin-inline: auto;
+  padding-inline: var(--mrn-gutter);
+}
+.mrn-container--narrow { max-width: 760px; }
+
+/*
+ * ГРУППА ДЕЙСТВИЙ (кнопки рядом)
+ *
+ * Класс использовался в разметке первого экрана, но правил для него
+ * не существовало — кнопки шли встык, без промежутка. Здесь он появляется
+ * как часть системы, а не как заплатка для одного экрана: тот же класс
+ * годится любой паре кнопок.
+ *
+ * На узком экране кнопки становятся в колонку и растягиваются на ширину
+ * контейнера — так до них проще дотянуться пальцем. Никаких отрицательных
+ * margin и ручного позиционирования.
+ */
+.mrn-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gap-actions);
+}
+.mrn-actions--center { justify-content: center; }
+
+@media (max-width: 520px) {
+  .mrn-actions {
+    flex-direction: column;
+    align-items: stretch;
+    /* В колонке нужен промежуток крупнее: иначе две кнопки
+       подряд читаются как один элемент с полосой посередине. */
+    gap: var(--space-3);
+  }
+  .mrn-actions > * { width: 100%; }
+}
+
+/* Вертикальный ритм секций */
+.mrn-section { padding-block: clamp(56px, 9vw, 104px); }
+.mrn-section--tight { padding-block: clamp(40px, 6vw, 72px); }
+
+/* ── ТОНА СЕКЦИЙ ──
+ *
+ * Плоскостей ровно две: светлая и тёмная. Раньше их было четыре, причём
+ * три из них — почти одинаковые оттенки бежевого (paper, sand, cream).
+ * Разница между ними не читалась как замысел, зато читалась как небрежность:
+ * «тут один белый, там другой, а тут почему-то третий».
+ *
+ * Чередование даёт контраст светлого и тёмного, а не подбор соседних
+ * оттенков одного цвета. Классы sand и cream сохранены как синонимы
+ * светлой плоскости: они стоят в разметке нескольких страниц, и менять
+ * их поштучно значило бы плодить точечные правки вместо системы.
+ */
+.mrn-tone-paper,
+.mrn-tone-sand,
+.mrn-tone-cream,
+.mrn-tone-spark { background: var(--color-surface); }
+.mrn-tone-ink { background: var(--color-ink); }
+
+/* Поднятый слой: карточки поверх светлой плоскости.
+   Чистый белый плюс тонкая линия — этого достаточно, чтобы карточка
+   отделилась от фона, и не нужен третий оттенок бежевого. */
+.mrn-raised {
+  background: var(--color-raised);
+  border: 1px solid var(--mrn-line);
+}
+ /*
+  * Тёмная плоскость — ровный чернильный тон без градиента.
+  * Раньше здесь были два радиальных свечения и диагональный переход:
+  * ровно тот приём, по которому страница читается как сгенерированная.
+  * Плотный чёрный работает лучше и не спорит с мандариновым акцентом.
+  */
+.mrn-tone-night {
+  background: var(--color-night-900);
+}
+
+/* Волосяная линия на стыке двух светлых секций — без неё они сливаются */
+.mrn-seam { border-top: 1px solid var(--mrn-line); }
+
+/* Заголовки */
+.mrn-display,
+.mrn-h1,
+.mrn-h2,
+.mrn-h3 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  line-height: 1.0;
+  /* Unbounded набран широко по умолчанию — минусовой трекинг возвращает
+     заголовку плотность и не даёт ему рассыпаться на отдельные буквы. */
+  letter-spacing: -0.04em;
+  text-wrap: balance;
+}
+/* Мелкие заголовки набираем интерфейсным гротеском: у крупной антиквы-акцента
+   своя роль (выделенное слово), а Unbounded в 17px читается тяжело. */
+.mrn-h3 {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+.mrn-display { font-size: var(--mrn-display); font-weight: 800; }
+.mrn-h1 { font-size: var(--mrn-h1); }
+.mrn-h2 { font-size: var(--mrn-h2); line-height: 1.08; }
+.mrn-h3 { font-size: var(--mrn-h3); line-height: 1.22; font-weight: 600; letter-spacing: -0.025em; }
+
+/* Unbounded набран заметно шире привычного гротеска, поэтому длинные
+   русские слова («конфиденциальности», «восемнадцатилетие») на узком экране
+   выходят за край и создают горизонтальную прокрутку.
+   Сначала пробуем перенос по слогам, а break-word оставляем страховкой:
+   в браузерах без словаря переносов он всё равно удержит слово в колонке. */
+@media (max-width: 640px) {
+  .mrn-display,
+  .mrn-h1,
+  .mrn-h2 {
+    hyphens: auto;
+    overflow-wrap: break-word;
+  }
+}
+
+/* Базовый цвет текста на тёмных плоскостях.
+   Без него заголовки наследовали графитовый цвет от body и сливались
+   с бордовым фоном — каждая секция была вынуждена задавать цвет инлайном. */
+.mrn-dark { color: var(--color-paper); }
+
+/* Надзаголовок секции — вместо разбросанных inline-стилей */
+.mrn-eyebrow {
+  font-family: var(--font-numeric);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-punch);
+}
+.mrn-dark .mrn-eyebrow { color: var(--color-spark); }
+
+/* Моноширинный акцент. Только там, где есть число или код: возраст,
+   дата, обратный отсчёт, надзаголовок секции. Никогда — абзацы и заголовки. */
+.mrn-numeric {
+  font-family: var(--font-numeric);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+}
+
+/* Крупное число — возраст на первом экране, счётчики в кабинете. */
+.mrn-figure {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.05em;
+  line-height: 0.86;
+}
+
+.mrn-lead {
+  font-size: clamp(15.5px, 1.6vw, 18px);
+  line-height: 1.65;
+  color: var(--color-ink-600);
+  text-wrap: pretty;
+}
+.mrn-dark .mrn-lead { color: rgba(250, 247, 242, 0.72); }
+
+.mrn-meta { font-size: 13px; line-height: 1.5; color: var(--color-ink-400); }
+.mrn-dark .mrn-meta { color: rgba(250, 247, 242, 0.62); }
+
+/* Тонкая линия вместо декоративных орнаментов */
+.mrn-rule { height: 1px; background: var(--mrn-line); border: 0; }
+.mrn-dark .mrn-rule { background: var(--mrn-line-invert); }
+
+/* ── Кнопки ── */
+.mrn-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 48px;
+  padding-inline: 26px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-ui);
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color var(--mrn-t) var(--mrn-ease),
+              border-color var(--mrn-t) var(--mrn-ease),
+              color var(--mrn-t) var(--mrn-ease);
+}
+.mrn-btn--sm { height: 40px; padding-inline: 18px; font-size: 14px; }
+.mrn-btn--lg { height: 54px; padding-inline: 32px; font-size: 16px; }
+.mrn-btn--block { width: 100%; }
+
+.mrn-btn--primary { background: var(--color-punch); color: #FFFFFF; }
+.mrn-btn--primary:hover { background: var(--color-ink); }
+
+.mrn-btn--secondary {
+  background: transparent;
+  color: var(--color-ink);
+  border-color: var(--mrn-line-strong);
+}
+.mrn-btn--secondary:hover { border-color: var(--color-ink); background: rgba(20, 20, 22, 0.04); }
+
+.mrn-btn--ghost { background: transparent; color: var(--color-ink-600); padding-inline: 14px; }
+.mrn-btn--ghost:hover { color: var(--color-ink); background: rgba(20, 20, 22, 0.05); }
+
+/* Тёмные плоскости */
+.mrn-dark .mrn-btn--primary { background: var(--color-punch); color: #FFFFFF; }
+.mrn-dark .mrn-btn--primary:hover { background: var(--color-punch-soft); }
+.mrn-dark .mrn-btn--secondary { color: var(--color-paper); border-color: var(--mrn-line-invert); }
+.mrn-dark .mrn-btn--secondary:hover { border-color: rgba(250, 247, 242, 0.5); background: rgba(250, 247, 242, 0.06); }
+.mrn-dark .mrn-btn--ghost { color: rgba(250, 247, 242, 0.7); }
+.mrn-dark .mrn-btn--ghost:hover { color: var(--color-paper); background: rgba(250, 247, 242, 0.08); }
+
+.mrn-btn:disabled,
+.mrn-btn[aria-disabled='true'] { opacity: 0.45; cursor: not-allowed; }
+
+/* Текстовая ссылка с подчёркиванием, растущим при наведении */
+.mrn-link {
+  color: inherit;
+  text-decoration: none;
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-size: 0% 1px;
+  background-position: 0 100%;
+  transition: background-size var(--mrn-t) var(--mrn-ease), color var(--mrn-t) var(--mrn-ease);
+  padding-bottom: 1px;
+}
+.mrn-link:hover { background-size: 100% 1px; }
+
+/* ── Поля ввода ── */
+.mrn-field { display: flex; flex-direction: column; gap: 7px; }
+.mrn-label { font-size: 13px; font-weight: 500; color: var(--color-ink-600); }
+.mrn-dark .mrn-label { color: rgba(250, 247, 242, 0.7); }
+
+.mrn-input,
+.mrn-textarea,
+.mrn-select {
+  width: 100%;
+  min-height: 48px;
+  padding: 13px 15px;
+  background: var(--color-paper);
+  border: 1px solid var(--mrn-line-strong);
+  border-radius: var(--radius-sm);
+  color: var(--color-ink);
+  font-family: var(--font-ui);
+  font-size: 15px;
+  line-height: 1.4;
+  outline: none;
+  transition: border-color var(--mrn-t) var(--mrn-ease), box-shadow var(--mrn-t) var(--mrn-ease);
+}
+.mrn-textarea { min-height: 120px; resize: vertical; }
+.mrn-input::placeholder, .mrn-textarea::placeholder { color: var(--color-ink-300); }
+.mrn-input:focus, .mrn-textarea:focus, .mrn-select:focus {
+  border-color: var(--color-punch);
+  box-shadow: 0 0 0 3px rgba(228, 69, 31, 0.12);
+}
+.mrn-input[aria-invalid='true'], .mrn-textarea[aria-invalid='true'] { border-color: var(--color-punch); }
+
+.mrn-dark .mrn-input,
+.mrn-dark .mrn-textarea,
+.mrn-dark .mrn-select {
+  background: rgba(250, 247, 242, 0.05);
+  border-color: var(--mrn-line-invert);
+  color: var(--color-paper);
+}
+.mrn-dark .mrn-input::placeholder,
+.mrn-dark .mrn-textarea::placeholder { color: rgba(250, 247, 242, 0.35); }
+.mrn-dark .mrn-input:focus,
+.mrn-dark .mrn-textarea:focus,
+.mrn-dark .mrn-select:focus {
+  border-color: var(--color-spark);
+  box-shadow: 0 0 0 3px rgba(255, 158, 192, 0.18);
+}
+
+/* 16px на мобильных предотвращает автозум iOS при фокусе */
+@media (max-width: 640px) {
+  .mrn-input, .mrn-textarea, .mrn-select { font-size: 16px; }
+}
+
+/* ── Карточка ── */
+.mrn-card {
+  background: var(--color-paper);
+  border: 1px solid var(--mrn-line);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.mrn-dark .mrn-card { background: rgba(250, 247, 242, 0.04); border-color: var(--mrn-line-invert); }
+
+/* Плашка-метка */
+.mrn-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding-inline: 10px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--mrn-line-strong);
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--color-ink-600);
+  white-space: nowrap;
+}
+.mrn-dark .mrn-tag { border-color: var(--mrn-line-invert); color: rgba(250, 247, 242, 0.68); }
+
+/* Точка палитры в карточке шаблона */
+.mrn-swatch {
+  width: 13px; height: 13px;
+  border-radius: var(--radius-full);
+  border: 1px solid rgba(20, 20, 22, 0.12);
+  flex-shrink: 0;
+}
+
+/* Только для скринридеров */
+.mrn-sr {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap; border: 0;
+}
+
+/* Ссылка «к содержимому» для клавиатуры */
+.mrn-skip {
+  position: absolute; left: 12px; top: -60px; z-index: 100;
+  background: var(--color-ink); color: var(--color-paper);
+  padding: 10px 16px; border-radius: var(--radius-sm); font-size: 14px;
+  transition: top var(--mrn-t) var(--mrn-ease);
+}
+.mrn-skip:focus { top: 12px; }
+
+/* ─────────────────────────────────────────────
+   4. ПУБЛИЧНАЯ ЧАСТЬ
+   ───────────────────────────────────────────── */
+
+/* ── Первый экран ──
+   Глубокий бордовый вместо белого поля: сайт должен передавать атмосферу
+   события до того, как пользователь начнёт читать. */
+.mrn-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  color: var(--color-paper);
+}
+/* Статичная зернистость: большие плоскости одного цвета иначе бандятся.
+   Не анимирована — это работа с материалом, а не эффект. */
+.mrn-hero-grain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Строки заголовка выезжают из-под маски — вместо одинакового fade-up */
+.mrn-line-mask { display: block; overflow: hidden; padding-bottom: 0.06em; }
+
+/* ── HERO: редакционный сплит + карточка первого вопроса ── */
+.mrn-hero__grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1.06fr 0.94fr;
+  gap: clamp(28px, 5vw, 76px);
+  align-items: center;
+}
+.mrn-hero__copy { position: relative; z-index: 2; }
+.mrn-hero__title {
+  margin-top: 18px;
+  font-size: clamp(2.5rem, 6.6vw, 5rem);
+  line-height: 0.96;
+  text-align: left;
+  hyphens: none;
+  overflow-wrap: normal;
+}
+.mrn-hero__lead {
+  margin-top: clamp(18px, 2.4vw, 26px);
+  max-width: 44ch;
+  font-size: clamp(15px, 1.5vw, 17px);
+}
+.mrn-hero__trust {
+  list-style: none;
+  margin: clamp(30px, 4vw, 44px) 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px clamp(16px, 2.4vw, 28px);
+}
+.mrn-hero__trust li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: rgba(252, 246, 245, 0.64);
+}
+.mrn-hero__dot { width: 5px; height: 5px; border-radius: 999px; background: var(--color-punch); }
+
+/* Розовое свечение за карточкой — глубина без «дешёвого градиента» */
+.mrn-hero__glow {
+  position: absolute;
+  z-index: 0;
+  top: 50%;
+  right: 6%;
+  width: min(46vw, 560px);
+  aspect-ratio: 1;
+  transform: translateY(-50%);
+  background: radial-gradient(circle, rgba(245, 48, 107, 0.34) 0%, rgba(245, 48, 107, 0) 66%);
+  pointer-events: none;
+  filter: blur(6px);
+}
+
+.mrn-hero__stage {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+}
+.mrn-hero__card {
+  position: relative;
+  width: min(370px, 100%);
+  padding: clamp(26px, 3vw, 36px) clamp(22px, 2.6vw, 30px) clamp(28px, 3vw, 34px);
+  border-radius: 28px;
+  background: linear-gradient(168deg, #FFF7F9 0%, #FFEAF1 100%);
+  border: 1px solid rgba(245, 48, 107, 0.14);
+  box-shadow: 0 40px 90px -30px rgba(120, 10, 50, 0.7), 0 2px 0 rgba(255, 255, 255, 0.6) inset;
+  text-align: center;
+  transform: rotate(-3deg);
+  transition: transform 0.5s var(--mrn-ease);
+  overflow: hidden;
+}
+.mrn-hero__card:hover { transform: rotate(-1deg) translateY(-4px); }
+.mrn-hero__card-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(120% 60% at 50% 0%, rgba(255, 158, 192, 0.5) 0%, transparent 60%);
+  pointer-events: none;
+}
+.mrn-hero__card > * { position: relative; }
+.mrn-hero__q {
+  margin: 14px auto 20px;
+  max-width: 15ch;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(19px, 2vw, 23px);
+  line-height: 1.16;
+  letter-spacing: -0.02em;
+  color: #241019;
+}
+.mrn-hero__q em {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 500;
+  color: var(--color-punch);
+}
+.mrn-hero__answers {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+.mrn-hero__yes,
+.mrn-hero__no {
+  min-height: 50px;
+  padding: 0 30px;
+  border-radius: 999px;
+  font-family: var(--font-ui);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: default;
+  transition: transform 0.35s var(--mrn-ease);
+}
+.mrn-hero__yes { background: var(--color-punch); color: #fff; border: 0; }
+.mrn-hero__no { background: transparent; color: #241019; border: 1.5px solid rgba(36, 16, 25, 0.2); }
+
+@media (max-width: 920px) {
+  .mrn-hero__grid { grid-template-columns: 1fr; gap: clamp(36px, 8vw, 52px); }
+  .mrn-hero__title, .mrn-hero__lead { text-align: left; }
+  .mrn-hero__card { transform: rotate(-2deg); width: min(340px, 100%); }
+  .mrn-hero__glow { right: -10%; width: min(80vw, 460px); }
+}
+@media (max-width: 520px) {
+  .mrn-hero__card { transform: none; }
+  .mrn-hero__card:hover { transform: translateY(-4px); }
+  /* «Приглашение» — длинное слово: на узком экране уменьшаем кегль,
+     чтобы оно вставало целой строкой без переноса дефисом. */
+  .mrn-hero__title { font-size: clamp(2rem, 10.5vw, 2.9rem); }
+}
+
+/* Кнопки на бордовой плоскости */
+.mrn-tone-night .mrn-btn--primary { background: var(--color-punch); color: #FFFFFF; }
+.mrn-tone-night .mrn-btn--primary:hover { background: var(--color-punch-soft); }
+.mrn-tone-night .mrn-btn--secondary {
+  color: var(--color-paper);
+  border-color: rgba(250, 247, 242, 0.34);
+}
+.mrn-tone-night .mrn-btn--secondary:hover {
+  border-color: var(--color-spark);
+  background: rgba(255, 158, 192, 0.14);
+}
+
+/* Мягкая виньетка снизу — переход к молочной секции без резкой границы */
+.mrn-hero::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 38%;
+  pointer-events: none;
+  background: linear-gradient(to bottom, rgba(23, 13, 20, 0) 0%, rgba(23, 13, 20, 0.42) 100%);
+  z-index: -1;
+}
+
+/*
+ * Акцентное слово в заголовке — подпись всего бренда Date.
+ * Курсивная антиква Playfair горячего розового посреди плотного гротеска:
+ * контраст двух характеров, редакционный, а не «свадебный скрипт».
+ * Именно этот приём мгновенно отличает Date от геометрического Birthday.
+ */
+.mrn-h1-accent {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--color-punch);
+  /* антиква оптически мельче гротеска рядом — чуть подрастим */
+  font-size: 1.06em;
+}
+.mrn-dark .mrn-h1-accent { color: var(--color-punch-soft); }
+
+/* Линия под акцентным словом. GSAP анимирует --draw от 0 к 1. */
+.mrn-draw {
+  position: relative;
+  display: inline-block;
+}
+.mrn-draw::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -0.02em;
+  height: 0.07em;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: 0.28;
+  transform: scaleX(var(--draw, 1));
+  transform-origin: left;
+}
+
+/* ── Скелетон превью ──
+   Держит высоту карточки и показывает, что содержимое ещё грузится. */
+.mrn-skeleton {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, var(--color-paper-2) 30%, var(--color-paper-3) 50%, var(--color-paper-2) 70%);
+  background-size: 220% 100%;
+  animation: mrn-skeleton 1.4s linear infinite;
+}
+@keyframes mrn-skeleton {
+  from { background-position: 120% 0; }
+  to { background-position: -120% 0; }
+}
+
+/* Появление секции — единственная скролл-анимация в проекте */
+.mrn-reveal {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity var(--mrn-t-slow) var(--mrn-ease), transform var(--mrn-t-slow) var(--mrn-ease);
+}
+.mrn-reveal[data-shown='true'] { opacity: 1; transform: none; }
+
+/* Живое превью шаблона: настоящий первый экран сайта, отмасштабированный
+   под ширину карточки. Контейнерные запросы дают точный коэффициент. */
+.mrn-preview {
+  position: relative;
+  overflow: hidden;
+  background: var(--color-paper-2);
+}
+/* Сцена проявляется только когда внутри готовы и разметка, и шрифты —
+   иначе превью «моргает» подменным шрифтом на медленном соединении. */
+.mrn-preview .mrn-preview-stage { opacity: 0; }
+.mrn-preview[data-ready='true'] .mrn-preview-stage { opacity: 1; }
+.mrn-preview[data-ready='true'] .mrn-skeleton { opacity: 0; pointer-events: none; }
+.mrn-skeleton { transition: opacity var(--mrn-t) var(--mrn-ease); }
+
+/* Запасной вариант: если сцена не поднялась, карточка всё равно осмысленна */
+.mrn-preview-fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px;
+  text-align: center;
+}
+/* Сцена занимает карточку целиком: ширина карточки и есть «экран телефона»,
+   поэтому vw-единицы и брейкпоинты внутри блоков считаются правильно. */
+.mrn-preview-stage {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  /* В карточке каталога сцена не должна перехватывать клик: нажатие
+     принадлежит самой карточке. В полном демо — наоборот, иначе внутри
+     рамки не прокрутить приглашение. */
+  pointer-events: none;
+  transform-origin: center;
+  transition: transform var(--mrn-t-slow) var(--mrn-ease), opacity var(--mrn-t) var(--mrn-ease);
+}
+.mrn-preview[data-depth='full'] .mrn-preview-stage { pointer-events: auto; }
+
+/*
+ * Панель управления кадром галереи. При наличии наведения появляется
+ * по нему, на тач-устройствах видна всегда: иначе до неё не добраться.
+ */
+.mrn-tile-tools { opacity: 1; transition: opacity 0.2s ease; }
+@media (hover: hover) {
+  .mrn-tile-tools { opacity: 0; }
+  .group:hover .mrn-tile-tools,
+  .group:focus-within .mrn-tile-tools { opacity: 1; }
+}
+
+/* Внутри превью каталога первый экран показывается как картинка: кнопка
+   «Подтвердить участие» никуда не ведёт и только спорит с действиями карточки. */
+.mrn-preview-stage a[href="#rsvp"] { display: none; }
+
+/* Ведущая карточка: на десктопе превью тянется на всю высоту ячейки */
+@media (min-width: 640px) {
+  .mrn-preview--lead { aspect-ratio: auto !important; height: 100%; min-height: 340px; }
+}
+@media (min-width: 1024px) {
+  .mrn-preview--lead { min-height: 420px; }
+}
+
+/* Карточка шаблона: медиа чуть оживает, сама карточка почти не двигается */
+/* display не задаём: карточки раскладываются флексом и грид-классами,
+   иначе прижатые к низу действия перестают выравниваться между карточками. */
+/* ─────────────────────────────────────────────
+   КАТАЛОГ СЦЕНАРИЕВ
+
+   Асимметричная сетка на 12 колонок. Ширина каждой ячейки приходит
+   из --span (задаётся в разметке), поэтому ритм меняется данными,
+   а не переписыванием CSS. До 900px сетка складывается в одну колонку:
+   на телефоне разноширинные карточки превращаются в кашу.
+   ───────────────────────────────────────────── */
+.mrn-tpl-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+}
+@media (min-width: 640px) {
+  .mrn-tpl-grid { grid-template-columns: repeat(2, 1fr); }
+  .mrn-tpl-cell { grid-column: span 1; }
+}
+@media (min-width: 1024px) {
+  .mrn-tpl-grid {
+    grid-template-columns: repeat(12, 1fr);
+    gap: var(--gap-grid);
+    /* Сетка выравнивает ячейки по верху: иначе смещённая карточка
+       растягивала бы соседей по высоте вместо того, чтобы сдвинуться. */
+    align-items: start;
+  }
+  .mrn-tpl-cell {
+    grid-column: span var(--span, 4);
+    /* Смещение по вертикали задаётся данными (OFFSET_RHYTHM), а не
+       правится вручную для каждой карточки. Это transform, а не margin:
+       поток не смещается, соседние ряды остаются на своих местах. */
+    transform: translateY(var(--offset, 0px));
+  }
+}
+
+.mrn-tpl-card {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: var(--color-ink);
+  isolation: isolate;
+  /* Глубина даётся одной мягкой тенью, а не тремя слоями свечения */
+  box-shadow: 0 1px 2px rgba(20, 20, 22, 0.06), 0 12px 28px rgba(20, 20, 22, 0.08);
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.35s ease;
+}
+.mrn-tpl-card__preview { width: 100%; height: 100%; }
+
+/* Подпись поверх превью */
+.mrn-tpl-card__meta {
+  position: absolute;
+  inset: auto 0 0 0;
+  z-index: 2;
+  padding: clamp(16px, 2vw, 22px);
+  color: #fff;
+  /*
+   * Подложка обязана быть плотной: под ней лежит настоящий первый экран
+   * приглашения со своим текстом, и при мягком затемнении его строки
+   * просвечивали сквозь подпись карточки. Размытие добивает читаемость
+   * на светлых сценариях вроде «Одной свечи».
+   */
+  background: linear-gradient(
+    to top,
+    rgba(12, 12, 14, 0.97) 0%,
+    rgba(12, 12, 14, 0.92) 46%,
+    rgba(12, 12, 14, 0.62) 80%,
+    rgba(12, 12, 14, 0) 100%
+  );
+  backdrop-filter: blur(3px);
+}
+.mrn-tpl-card__name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  font-size: clamp(1.05rem, 1.5vw, 1.4rem);
+  line-height: 1.1;
+  color: #fff;
+}
+.mrn-tpl-card__badge {
+  flex-shrink: 0;
+  font-family: var(--font-numeric);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.85);
+}
+.mrn-tpl-card__tagline {
+  margin-top: 7px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.72);
+}
+.mrn-tpl-card__desc {
+  margin-top: 10px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.62);
+}
+/*
+ * На телефоне hover не существует, поэтому подпись карточки видна всегда.
+ * Вместе с описанием она закрывала собой всё превью — и человек переставал
+ * видеть то, ради чего карточка и сделана: настоящий экран приглашения.
+ * Описание — десктопная подробность, на узком экране его место занимает
+ * сама сцена.
+ */
+@media (hover: none), (max-width: 640px) {
+  .mrn-tpl-card__desc { display: none; }
+}
+.mrn-tpl-card__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+.mrn-tpl-card__fonts {
+  font-family: var(--font-numeric);
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+}
+.mrn-tpl-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+.mrn-tpl-card__demo,
+.mrn-tpl-card__pick {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 40px;
+  padding-inline: 14px;
+  border-radius: var(--radius-sm);
+  font-size: 13.5px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background 0.2s ease;
+}
+.mrn-tpl-card__demo {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.14);
+}
+.mrn-tpl-card__demo:hover { background: rgba(255, 255, 255, 0.24); }
+.mrn-tpl-card__pick {
+  color: #fff;
+  background: var(--color-punch);
+}
+.mrn-tpl-card__pick:hover { background: #FF6F98; }
+
+/*
+ * Полупрозрачный слой поверх превью при наведении.
+ *
+ * Не «стекло ради стекла»: слой слегка приглушает кадр, чтобы поднявшийся
+ * текст читался поверх любого сценария — и светлой «Одной свечи»,
+ * и тёмной «Аркады». Размытие минимальное (4px): при большем превью
+ * превращается в кашу и перестаёт показывать то, ради чего оно здесь.
+ */
+.mrn-tpl-card__veil {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  opacity: 0;
+  background: rgba(23, 13, 20, 0.30);
+  backdrop-filter: blur(4px) saturate(115%);
+  transition: opacity 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+}
+
+/*
+ * Раскрытие по наведению — только там, где наведение существует.
+ * На тач-устройствах (hover: none) описание и действия видны сразу:
+ * прятать смысл за жестом, которого нет, — прямой путь к «не работает».
+ */
+@media (hover: hover) and (min-width: 1024px) {
+  .mrn-tpl-card:hover .mrn-tpl-card__veil,
+  .mrn-tpl-card:focus-within .mrn-tpl-card__veil { opacity: 1; }
+  .mrn-tpl-card__more {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: max-height 0.4s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease;
+  }
+  .mrn-tpl-card:hover,
+  .mrn-tpl-card:focus-within {
+    transform: translateY(-4px);
+    box-shadow: 0 2px 4px rgba(20, 20, 22, 0.08), 0 22px 46px rgba(20, 20, 22, 0.16);
+  }
+  .mrn-tpl-card:hover .mrn-tpl-card__more,
+  .mrn-tpl-card:focus-within .mrn-tpl-card__more {
+    max-height: 260px;
+    opacity: 1;
+  }
+  .mrn-tpl-card:hover .mrn-preview-stage { transform: scale(1.04); }
+}
+
+.mrn-tpl-card .mrn-preview { border: 0; border-radius: 0; }
+.mrn-tpl-card .mrn-preview-stage { transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1); }
+
+/* Навигация */
+.mrn-nav {
+  position: fixed;
+  inset-inline: 0;
+  top: 0;
+  z-index: 60;
+  height: 68px;
+  border-bottom: 1px solid transparent;
+  transition: background-color var(--mrn-t) var(--mrn-ease), border-color var(--mrn-t) var(--mrn-ease);
+}
+.mrn-nav[data-scrolled='true'] {
+  background: color-mix(in srgb, var(--color-paper) 88%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-bottom-color: var(--mrn-line);
+}
+.mrn-nav.mrn-dark[data-scrolled='true'] {
+  background: color-mix(in srgb, #0E0E11 88%, transparent);
+  border-bottom-color: var(--mrn-line-invert);
+}
+@media (max-width: 767px) { .mrn-nav { height: 60px; } }
+
+.mrn-navlink {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  padding-inline: 12px;
+  border-radius: var(--radius-sm);
+  font-size: 15px;
+  color: var(--color-ink-600);
+  text-decoration: none;
+  transition: color var(--mrn-t) var(--mrn-ease);
+}
+.mrn-navlink:hover,
+.mrn-navlink[aria-current='page'] { color: var(--color-ink); }
+.mrn-navlink[aria-current='page']::after {
+  content: '';
+  position: absolute;
+  left: 12px; right: 12px; bottom: 2px;
+  height: 1px;
+  background: var(--color-punch);
+}
+.mrn-dark .mrn-navlink { color: rgba(250, 247, 242, 0.66); }
+.mrn-dark .mrn-navlink:hover,
+.mrn-dark .mrn-navlink[aria-current='page'] { color: var(--color-paper); }
+.mrn-dark .mrn-navlink[aria-current='page']::after { background: var(--color-spark); }
+
+/* Логотип */
+.mrn-logo {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  text-decoration: none;
+  color: inherit;
+}
+.mrn-logo-name {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 20px;
+  line-height: 1;
+  letter-spacing: -0.045em;
+}
+.mrn-logo-sub {
+  font-family: var(--font-numeric);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-punch);
+}
+@media (max-width: 380px) { .mrn-logo-name { font-size: 18px; } }
+.mrn-dark .mrn-logo-sub { color: var(--color-spark); }
+
+/* Мобильное меню — панель сверху, а не «шторка» снизу */
+.mrn-menu {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-paper);
+  overscroll-behavior: contain;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.mrn-menu.mrn-dark { background: #0E0E11; }
+.mrn-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 60px;
+  padding-block: 14px;
+  border-bottom: 1px solid var(--mrn-line);
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  font-size: 21px;
+  color: var(--color-ink);
+  text-decoration: none;
+}
+.mrn-menu-item[aria-current='page'] { color: var(--color-punch); }
+.mrn-dark .mrn-menu-item { color: var(--color-paper); border-bottom-color: var(--mrn-line-invert); }
+.mrn-dark .mrn-menu-item[aria-current='page'] { color: var(--color-spark); }
+
+/* Иконочная кнопка — минимум 44×44 для касания */
+.mrn-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px; height: 44px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-ink-600);
+  cursor: pointer;
+  transition: background-color var(--mrn-t) var(--mrn-ease), color var(--mrn-t) var(--mrn-ease);
+}
+.mrn-icon-btn:hover { background: rgba(20, 20, 22, 0.06); color: var(--color-ink); }
+.mrn-dark .mrn-icon-btn { color: rgba(250, 247, 242, 0.7); }
+.mrn-dark .mrn-icon-btn:hover { background: rgba(250, 247, 242, 0.1); color: var(--color-paper); }
+
+/* ─────────────────────────────────────────────
+   ПОМОЩНИК
+   Свёрнут в компактную кнопку в углу; панель раскрывается только
+   по нажатию и никогда не перекрывает интерфейс сама по себе.
+   ───────────────────────────────────────────── */
+.mrn-assistant {
+  position: fixed;
+  right: max(16px, env(safe-area-inset-right));
+  bottom: max(16px, env(safe-area-inset-bottom));
+  z-index: 55;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  pointer-events: none;
+}
+.mrn-assistant > * { pointer-events: auto; }
+
+.mrn-assistant-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 46px;
+  padding-inline: 8px 18px;
+  border: 1px solid var(--mrn-line);
+  border-radius: var(--radius-full);
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: var(--mrn-shadow);
+  transition: border-color var(--mrn-t) var(--mrn-ease), box-shadow var(--mrn-t) var(--mrn-ease);
+}
+.mrn-assistant-toggle:hover { border-color: var(--mrn-line-strong); box-shadow: var(--mrn-shadow-lift); }
+
+.mrn-assistant-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding-inline: 8px;
+  border-radius: var(--radius-full);
+  background: var(--color-punch);
+  color: #fff;
+  font-family: var(--font-numeric);
+  font-size: 12.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.mrn-assistant-panel {
+  width: min(340px, calc(100vw - 32px));
+  box-shadow: var(--mrn-shadow-lift);
+  animation: mrn-assistant-in var(--mrn-t) var(--mrn-ease);
+}
+@keyframes mrn-assistant-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* На узких экранах подпись прячем — остаётся компактный счётчик */
+@media (max-width: 480px) {
+  .mrn-assistant-label { display: none; }
+  .mrn-assistant-toggle { padding-inline: 7px; }
+}
+
+/* В редакторе правый нижний угол занят кнопкой «Настройки»,
+   поэтому помощник уходит к левому краю. */
+.mrn-assistant--editor {
+  right: auto;
+  left: max(16px, env(safe-area-inset-left));
+  align-items: flex-start;
+}
+
+/* ─────────────────────────────────────────────
+   5. LEGACY — используются редактором, кабинетом
+   и блоками опубликованных сайтов.
+   Значения блоков намеренно оставлены прежними,
+   чтобы уже опубликованные приглашения не изменились.
+   ───────────────────────────────────────────── */
+
+/* Основная кнопка кабинета и редактора. Класс сохранён из общей
+   кодовой базы Maruno: он стоит в кабинете, редакторе и формах. */
+.btn-luxury {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--color-punch);
+  color: #FFFFFF;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-weight: 500;
+  text-decoration: none;
+  transition: background-color var(--mrn-t) var(--mrn-ease), color var(--mrn-t) var(--mrn-ease);
+}
+.btn-luxury:hover { background: var(--color-ink); color: #FFFFFF; }
+.btn-luxury:disabled { opacity: 0.45; cursor: not-allowed; background: var(--color-punch); }
+.mrn-dark .btn-luxury { background: var(--color-spark); color: var(--color-night-900); }
+.mrn-dark .btn-luxury:hover { background: var(--color-paper); color: var(--color-ink); }
+
+.input-luxury {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--mrn-line-strong);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  color: inherit;
+  outline: none;
+  font-family: var(--font-ui);
+  font-size: 15px;
+  transition: border-color var(--mrn-t) var(--mrn-ease), box-shadow var(--mrn-t) var(--mrn-ease);
+}
+.input-luxury:focus {
+  border-color: var(--color-punch);
+  box-shadow: 0 0 0 3px rgba(228, 69, 31, 0.12);
+}
+
+/* Блоки пользовательских сайтов — значения не меняем, иначе изменится
+   вид уже опубликованных приглашений. */
+.glass { background: rgba(255,255,255,0.08); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.15); }
+.glass-dark { background: rgba(0,0,0,0.4); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); }
+.glass-white { background: rgba(255,255,255,0.9); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(245,197,66,0.2); }
+
+.ornament { display: flex; align-items: center; gap: 14px; color: #FF9EC0; }
+.ornament::before, .ornament::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg,transparent,#FF9EC0,transparent); }
+
+.template-card {
+  position: relative; overflow: hidden; cursor: pointer;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--mrn-line);
+  transition: border-color var(--mrn-t) var(--mrn-ease), box-shadow var(--mrn-t) var(--mrn-ease);
+}
+.template-card:hover { border-color: var(--mrn-line-strong); box-shadow: var(--mrn-shadow); }
+.template-card.selected { border-color: var(--color-punch); box-shadow: 0 0 0 2px rgba(228, 69, 31, 0.18); }
+
+.proj-card-hover { transition: border-color var(--mrn-t) var(--mrn-ease), box-shadow var(--mrn-t) var(--mrn-ease); }
+.proj-card-hover:hover { box-shadow: var(--mrn-shadow); }
+
+.editing [contenteditable]:hover { border-bottom: 2px dashed rgba(228, 69, 31, 0.5) !important; }
+[contenteditable]:focus { outline: none; }
+
+/* Шрифты сайтов пользователей выбираются в редакторе */
+.font-unbounded    { font-family: 'Unbounded', sans-serif !important; }
+.font-bowlby       { font-family: 'Bowlby One SC', cursive !important; }
+.font-russo        { font-family: 'Russo One', sans-serif !important; }
+.font-montserrat   { font-family: 'Montserrat', sans-serif !important; }
+.font-caveat       { font-family: 'Caveat', cursive !important; }
+
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes float  { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@keyframes spin   { to { transform: rotate(360deg); } }
+.float { animation: float 4s ease-in-out infinite; }
+
+/* Полотно редактора: на мобильном оставляем место под плавающую кнопку
+   и безопасную зону, иначе последний блок закрыт кнопкой «Настройки». */
+@media (max-width: 768px) {
+  .editor-canvas-wrap {
+    padding: 8px !important;
+    padding-bottom: calc(88px + env(safe-area-inset-bottom)) !important;
+  }
+}
+
+/* Верхняя панель редактора.
+   Высота и отступы учитывают вырез экрана, а на узких экранах кнопки
+   больше не наезжают друг на друга. */
+.mrn-editor-bar {
+  height: 56px;
+  padding-inline: max(12px, env(safe-area-inset-left)) max(12px, env(safe-area-inset-right));
+  padding-top: env(safe-area-inset-top);
+  box-sizing: content-box;
+}
+@media (min-width: 640px) {
+  .mrn-editor-bar { padding-inline: 16px; }
+}
+
+/* Пальцем в 28-пиксельную кнопку не попасть: на сенсорных экранах
+   увеличиваем зону нажатия у иконочных кнопок редактора. */
+@media (pointer: coarse) {
+  .mrn-editor-bar button,
+  .mrn-editor-bar a {
+    min-height: 40px;
+    min-width: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* Переключатель в редакторе */
+.toggle-fix {
+  position: relative;
+  width: 42px; height: 24px;
+  border-radius: var(--radius-full);
+  border: none; cursor: pointer;
+  transition: background-color var(--mrn-t) var(--mrn-ease);
+  flex-shrink: 0; display: inline-block;
+}
+.toggle-fix::after {
+  content: '';
+  position: absolute; top: 3px; left: 3px;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+  transition: transform var(--mrn-t) var(--mrn-ease);
+}
+.toggle-fix[data-state="on"] { background: var(--color-punch); }
+.toggle-fix[data-state="off"] { background: #D1D5DB; }
+.toggle-fix[data-state="on"]::after { transform: translateX(18px); }
+.toggle-fix[data-state="off"]::after { transform: translateX(0px); }
+
+/* Lenis */
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+.lenis.lenis-stopped { overflow: hidden; }
+.lenis.lenis-smooth iframe { pointer-events: none; }
+
+/* ─────────────────────────────────────────────
+   6. ПРАЗДНИЧНЫЕ ПРИМИТИВЫ
+   Три элемента, у каждого своя работа. Никаких «шариков»,
+   блобов и плавающих кружков ради оживления макета.
+   ───────────────────────────────────────────── */
+
+/* Билет: карточка с вырубкой по бокам. Метафора приглашения —
+   отсюда и форма. Используется в тарифах и карточках сценариев. */
+.mrn-ticket {
+  position: relative;
+  background: var(--color-paper);
+  border: 1px solid var(--mrn-line);
+  border-radius: var(--radius-lg);
+}
+.mrn-ticket::before,
+.mrn-ticket::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--mrn-line);
+  border-radius: 50%;
+  background: var(--color-paper-2);
+  transform: translateY(-50%);
+}
+.mrn-ticket::before { left: -10px; clip-path: inset(0 0 0 50%); }
+.mrn-ticket::after { right: -10px; clip-path: inset(0 50% 0 0); }
+
+/* Возраст на первом экране и в карточках шаблонов. */
+.mrn-age {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.12em;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.06em;
+  line-height: 0.82;
+}
+
+
+/* ─────────────────────────────────────────────
+   ДОСТУПНОСТЬ: полное уважение к настройке ОС.
+   Раньше это учитывалось только внутри GSAP на главной.
+   ───────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .mrn-reveal { opacity: 1; transform: none; }
+  .mrn-tpl-card:hover .mrn-preview-stage { transform: scale(calc(100cqw / 400)); }
+  .float { animation: none; }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   СЦЕНЫ ПРИГЛАШЕНИЯ НА СВИДАНИЕ
+
+   Это стили САМОГО приглашения, а не интерфейса кабинета (.mrn-*).
+   Цвета и шрифты сюда приходят инлайном из палитры проекта —
+   здесь только раскладка, ритм и безопасные зоны.
+
+   Главное правило раздела: ни одна сцена не создаёт горизонтальную
+   прокрутку и не прячет содержимое под вырезом или жестовой полосой.
+   ══════════════════════════════════════════════════════════════ */
+
+.date-scene {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  /*
+   * flex-start вместо center — вместе с `margin-block: auto` у внутреннего
+   * блока. Пока содержимое помещается, оно стоит по центру; когда не
+   * помещается (низкий экран, шесть вариантов ответа, альбомная
+   * ориентация) — прижимается к верху и прокручивается целиком.
+   * Обычный `align-items: center` в этом случае срезает верх содержимого
+   * так, что до него нельзя домотать.
+   */
+  align-items: flex-start;
+  justify-content: center;
+  /* svh, а не vh: адресная строка мобильного браузера не должна
+     срезать нижнюю кнопку сцены. Запасное значение — для старых движков. */
+  min-height: 100vh;
+  min-height: 100svh;
+  width: 100%;
+  /*
+   * По горизонтали — никогда: убегающая кнопка не имеет права
+   * породить горизонтальную прокрутку. По вертикали — по необходимости.
+   */
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding:
+    calc(env(safe-area-inset-top) + clamp(24px, 5vh, 56px))
+    calc(env(safe-area-inset-right) + clamp(18px, 5vw, 40px))
+    calc(env(safe-area-inset-bottom) + clamp(24px, 5vh, 56px))
+    calc(env(safe-area-inset-left) + clamp(18px, 5vw, 40px));
+}
+
+.date-scene__glow {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.date-scene__inner {
+  position: relative;
+  z-index: 2;
+  margin-block: auto;
+  width: 100%;
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: clamp(18px, 3.5vh, 30px);
+}
+
+/* Раскладка «карточка»: содержимое лежит плашкой поверх фона. */
+.date-scene__inner.is-card {
+  padding: clamp(24px, 5vw, 40px);
+  border-radius: 26px;
+  border: 1px solid;
+  backdrop-filter: blur(14px);
+  box-shadow: 0 26px 70px rgba(0, 0, 0, 0.22);
+}
+
+.date-scene__character { flex-shrink: 0; }
+
+.date-scene__header {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.date-scene__eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.date-scene__title {
+  /* Вопрос — самый крупный элемент сцены, но он обязан помещаться
+     на 320px без переносов посреди слова. */
+  font-size: clamp(25px, 6.4vw, 42px);
+  line-height: 1.14;
+  letter-spacing: -0.02em;
+  font-weight: 600;
+  margin: 0;
+  text-wrap: balance;
+  overflow-wrap: break-word;
+}
+
+.date-scene__subtitle {
+  font-size: clamp(14px, 3.4vw, 16.5px);
+  line-height: 1.5;
+  margin: 0;
+  text-wrap: pretty;
+}
+
+.date-scene__body {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+/* ── Кнопки и карточки выбора ── */
+
+.date-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  /* 52px — комфортная цель для пальца даже после уменьшения кнопки «Нет» */
+  min-height: 52px;
+  padding: 0 28px;
+  border: 1px solid transparent;
+  border-radius: var(--wd-btn-radius, 14px);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.16s ease, box-shadow 0.2s ease, background 0.2s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.date-btn:active { transform: scale(0.97); }
+
+.date-btn--lg { min-height: 58px; padding-inline: 38px; font-size: 17px; }
+
+.date-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+/* Раскладка «сцена»: варианты идут сеткой, а не столбцом. */
+.date-choices--grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+@media (max-width: 380px) {
+  .date-choices--grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+.date-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 56px;
+  padding: 12px 16px;
+  border-radius: var(--wd-btn-radius, 14px);
+  border: 1px solid;
+  background: transparent;
+  font: inherit;
+  font-size: 15.5px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.16s ease, border-color 0.2s ease, background 0.2s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  overflow-wrap: anywhere;
+}
+.date-option:active { transform: scale(0.98); }
+.date-option__emoji { font-size: 21px; line-height: 1; flex-shrink: 0; }
+
+.date-field {
+  width: 100%;
+  min-height: 52px;
+  padding: 12px 16px;
+  border-radius: var(--wd-btn-radius, 14px);
+  border: 1px solid;
+  background: transparent;
+  font: inherit;
+  font-size: 16px; /* < 16px заставляет iOS зумить страницу при фокусе */
+  outline: none;
+}
+
+.date-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.date-chip {
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid;
+  background: transparent;
+  font: inherit;
+  font-size: 15px;
+  cursor: pointer;
+  transition: transform 0.16s ease, background 0.2s ease;
+  touch-action: manipulation;
+}
+.date-chip:active { transform: scale(0.96); }
+
+/* ── Сводка финального экрана ── */
+
+.date-summary {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid;
+}
+
+.date-summary__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 13px 16px;
+}
+.date-summary__label { font-size: 13px; opacity: 0.6; flex-shrink: 0; }
+.date-summary__value { font-size: 15.5px; font-weight: 600; text-align: right; overflow-wrap: anywhere; }
+
+/* ── Служебное ── */
+
+/* Индикатор пройденного пути. Тонкая полоса сверху, не «шкала прогресса». */
+.date-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 40;
+  pointer-events: none;
+}
+
+/*
+ * Низкий экран: альбомная ориентация телефона, окно предпросмотра,
+ * сцена с шестью вариантами. Сжимаем ритм, а не прячем содержимое —
+ * прокрутка остаётся запасным вариантом, а не единственным способом
+ * добраться до кнопки.
+ */
+@media (max-height: 680px) {
+  .date-scene { padding-block: clamp(16px, 3vh, 28px); }
+  .date-scene__inner { gap: clamp(12px, 2vh, 18px); }
+  .date-scene__character { --date-character-size: 92px; }
+  .date-option { min-height: 50px; padding-block: 10px; }
+  .date-btn { min-height: 48px; }
+  .date-btn--lg { min-height: 52px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .date-btn:active, .date-option:active, .date-chip:active { transform: none; }
+}
+
+
+/* ── Пагинация каталога шаблонов ── */
+.mrn-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: clamp(32px, 5vw, 52px);
+}
+.mrn-pager__pages { display: flex; gap: 8px; }
+.mrn-pager__page {
+  min-width: 42px;
+  height: 42px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--mrn-line-strong);
+  background: transparent;
+  font-family: var(--font-numeric);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-ink-600);
+  cursor: pointer;
+  transition: all var(--mrn-t-fast) var(--mrn-ease);
+}
+.mrn-pager__page:hover { border-color: var(--color-punch); color: var(--color-punch); }
+.mrn-pager__page.is-active {
+  background: var(--color-punch);
+  border-color: var(--color-punch);
+  color: #fff;
+}
+.mrn-pager__arrow {
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid var(--mrn-line-strong);
+  background: transparent;
+  color: var(--color-ink-600);
+  cursor: pointer;
+  transition: all var(--mrn-t-fast) var(--mrn-ease);
+}
+.mrn-pager__arrow:hover:not(:disabled) { border-color: var(--color-punch); color: var(--color-punch); }
+.mrn-pager__arrow:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* ── Сцена «Наша история»: фото на весь экран + текст поверх ── */
+.date-story {
+  position: relative;
+  min-height: 100vh;
+  min-height: 100svh;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  isolation: isolate;
+}
+.date-story__photo {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-size: cover;
+  background-position: center;
+}
+/* Затемнение снизу — ради читаемости текста, фото сверху остаётся чистым */
+.date-story__scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.28) 42%, rgba(0,0,0,0) 74%);
+  pointer-events: none;
+}
+.date-story__body {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 620px;
+  margin: 0 auto;
+  padding:
+    clamp(28px, 6vh, 64px)
+    calc(env(safe-area-inset-right) + clamp(20px, 6vw, 44px))
+    calc(env(safe-area-inset-bottom) + clamp(28px, 6vh, 56px))
+    calc(env(safe-area-inset-left) + clamp(20px, 6vw, 44px));
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.date-story__title {
+  font-size: clamp(28px, 6vw, 46px);
+  line-height: 1.04;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+  margin: 0;
+  text-wrap: balance;
+}
+.date-story__text {
+  font-size: clamp(15px, 2vw, 17px);
+  line-height: 1.55;
+  margin: 0;
+  max-width: 46ch;
+  text-wrap: pretty;
+}
+.date-story__cta { align-self: flex-start; margin-top: 6px; }
+.date-story__edit { margin-top: 6px; }
