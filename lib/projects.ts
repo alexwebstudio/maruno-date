@@ -3,7 +3,29 @@ import { APP_EVENT_TYPE, type Project, type SiteContent, type TemplateId } from 
 import { generateSlug, getBlankBlocks, getDefaultBlocks, getDefaultMusic, getTemplateDefaults } from './utils'
 import { getTemplate } from './templateCatalog'
 
-const supabase = createClient()
+/**
+ * Ленивый клиент Supabase.
+ *
+ * Раньше клиент создавался прямо на уровне модуля: `const supabase =
+ * createClient()`. Из-за этого ЛЮБОЙ импорт этого файла — включая сборку
+ * на Vercel, когда переменные NEXT_PUBLIC_SUPABASE_* ещё не подставлены в
+ * пререндер страниц, — падал с ошибкой «URL and API key are required», и
+ * деплой не создавался вовсе.
+ *
+ * Прокси откладывает создание клиента до первого реального обращения
+ * (`supabase.from(...)`), которое происходит уже в браузере во время
+ * работы приложения, где переменные окружения есть. Импорт модуля больше
+ * ничего не создаёт и не может уронить сборку. Все вызовы ниже
+ * (`supabase.from`, `supabase.storage`) остаются без изменений.
+ */
+let _supabaseClient: ReturnType<typeof createClient> | null = null
+const supabase = new Proxy({} as ReturnType<typeof createClient>, {
+  get(_target, prop) {
+    _supabaseClient ??= createClient()
+    const value = _supabaseClient[prop as keyof typeof _supabaseClient]
+    return typeof value === 'function' ? (value as (...a: unknown[]) => unknown).bind(_supabaseClient) : value
+  },
+})
 
 /**
  * Признак того, что в базе ещё нет колонки projects.event_type
