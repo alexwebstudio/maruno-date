@@ -7,6 +7,7 @@ import toast from 'react-hot-toast'
 import { Navbar } from '@/components/ui/Navbar'
 import { useAuth } from '@/lib/hooks/useAuth'
 import { AccountCard } from '@/components/dashboard/AccountCard'
+import { TelegramConnect } from '@/components/dashboard/TelegramConnect'
 import {
   loadUserSettings, saveUserSettings, DEFAULT_SETTINGS,
   type UserSettings, type PaletteId,
@@ -305,18 +306,9 @@ export default function SettingsPage() {
             )}
 
             {(s.messages.channel === 'telegram' || s.messages.channel === 'both') && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <div style={{ display: 'flex', gap: 10, padding: '14px 16px', borderRadius: 14, background: '#F0F6FB', border: '1px solid #D6E6F2' }}>
-                  <Send size={17} color="#2A7BB8" style={{ flexShrink: 0, marginTop: 1 }} />
-                  <p style={{ fontSize: 12.5, color: '#3A5A72', lineHeight: 1.6 }}>
-                    Telegram-уведомления без возни с BotFather: скоро подключение будет в один клик через общий бот Maruno. Пока можно оставить email — ответы точно не потеряются.
-                  </p>
-                </div>
-                <button onClick={() => toast('Подключение Telegram в один клик — скоро 🤍', { icon: '✈️' })}
-                  style={{ alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 20px', borderRadius: 12, background: '#229ED9', color: '#fff', border: 'none', fontSize: 13.5, fontWeight: 500, cursor: 'pointer' }}>
-                  <Send size={15} /> Подключить Telegram
-                </button>
-              </div>
+              <Field label="Telegram">
+                <TelegramConnect />
+              </Field>
             )}
 
             <div style={{ display: 'flex', gap: 10, padding: '14px 16px', borderRadius: 14, background: 'rgba(228, 69, 31,.08)', border: '1px solid rgba(228, 69, 31,.2)' }}>

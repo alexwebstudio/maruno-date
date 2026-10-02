@@ -7,7 +7,7 @@ import PrivacyPageClient from './PrivacyPageClient'
 export const metadata: Metadata = pageMetadata({
   title: 'Политика конфиденциальности',
   description: 'Как Maruno собирает, использует и защищает персональные данные пользователей сервиса.',
-  path: '/privacy', noindex: true,
+  path: '/privacy',
 })
 
 export default function Page() {

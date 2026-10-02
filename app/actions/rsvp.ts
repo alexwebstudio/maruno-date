@@ -89,7 +89,12 @@ export async function saveRSVPToDatabase(
     }
 
     const { error } = await supabase.from('rsvp_responses').insert(row)
-    if (!error) return { ok: true }
+    if (!error) {
+      // Заявка владельцу в Telegram, если он подключил его. Fire-and-forget:
+      // гость не должен ждать Telegram, и его сбой не отменяет приём ответа.
+      void notifyProjectOwnerTelegram(data)
+      return { ok: true }
+    }
 
     // База ещё без колонок comment/extra — миграция не выполнена.
     // Сохраняем то, что схема принимает: потерять ответ целиком хуже,
@@ -109,6 +114,7 @@ export async function saveRSVPToDatabase(
         '[maruno] Ответ сохранён без комментария: выполните ' +
         'supabase/migrations/20260921_guest_responses.sql',
       )
+      void notifyProjectOwnerTelegram(data)
       return { ok: true }
     }
 
@@ -167,5 +173,63 @@ export async function sendRSVPEmail(data: RSVPData): Promise<{ ok: boolean; reas
   } catch (err) {
     console.error('RSVP email error:', err)
     return { ok: false, reason: 'send_failed' }
+  }
+}
+
+
+/**
+ * Отправка заявки ВЛАДЕЛЬЦУ приглашения в его подключённый Telegram.
+ *
+ * Канал, который человек подключил в настройках (Настройки → Telegram).
+ * Владелец определяется так же, как везде в Maruno — по projects.user_id.
+ * Работает через service role (createAdminClient), потому что нужно прочитать
+ * чужую связь telegram_connections в обход RLS. Если Telegram не подключён
+ * или сервис не настроен — тихо выходим: это дополнительный канал, а не
+ * замена сохранению в базе.
+ */
+async function notifyProjectOwnerTelegram(
+  data: RSVPData & { projectId: string; extra?: Record<string, string> },
+): Promise<void> {
+  try {
+    const { createAdminClient } = await import('@/lib/supabase/admin')
+    const { sendTelegramMessage, esc } = await import('@/lib/telegram')
+    const admin = createAdminClient()
+    if (!admin) return
+
+    const { data: project } = await admin
+      .from('projects')
+      .select('user_id, title, slug')
+      .eq('id', data.projectId)
+      .maybeSingle()
+    if (!project?.user_id) return
+
+    const { data: conn } = await admin
+      .from('telegram_connections')
+      .select('chat_id')
+      .eq('user_id', project.user_id)
+      .maybeSingle()
+    if (!conn?.chat_id) return
+
+    const lines: string[] = []
+    lines.push('💌 <b>Новая заявка</b>')
+    lines.push(`Приглашение: <b>${esc(project.title || data.projectTitle)}</b>`)
+    lines.push('')
+    lines.push(`Имя: <b>${esc(data.name)}</b>`)
+    lines.push(`Ответ: <b>${data.attending === 'yes' ? 'Согласие' : 'Отказ'}</b>`)
+
+    // Пройденный сценарий свидания лежит в extra (ключ = подпись сцены)
+    for (const [key, val] of Object.entries(data.extra ?? {})) {
+      if (val) lines.push(`${esc(key)}: ${esc(val)}`)
+    }
+    if (data.comment?.trim()) lines.push(`Комментарий: ${esc(data.comment.trim())}`)
+
+    const base = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') || 'https://maruno.site'
+    lines.push('')
+    lines.push(`🔗 ${base}/${esc(project.slug || data.projectSlug)}`)
+    lines.push(`🕐 ${new Date().toLocaleString('ru-RU', { timeZone: 'Asia/Almaty' })}`)
+
+    await sendTelegramMessage(String(conn.chat_id), lines.join('\n'))
+  } catch (err) {
+    console.warn('[telegram] notifyProjectOwnerTelegram failed:', err)
   }
 }
